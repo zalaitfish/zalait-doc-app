@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand: #0066FF;
+  --brand-dark: #0052CC;
+  --brand-light: #EBF2FF;
+  --brand-50: #F5F8FF;
+  --surface: #F7F8FA;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --card-shadow-hover: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+html, body, #root { height: 100%; }
+body {
+  font-family: 'Heebo', system-ui, sans-serif;
+  background: var(--surface);
+  color: #1a1a2e;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page-enter { animation: pageIn 0.25s ease-out; }
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+.card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
+  transition: box-shadow 0.2s;
+}
+.card:hover { box-shadow: var(--card-shadow-hover); }
+.card-flat {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #f0f0f5;
+}
+
+input, select, textarea {
+  font-family: 'Heebo', system-ui, sans-serif;
+}
+
+button { transition: all 0.15s ease; }
+button:active { transform: scale(0.97); }
