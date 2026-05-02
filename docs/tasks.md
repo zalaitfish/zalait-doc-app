@@ -191,3 +191,6 @@
 | v4 | Apr 12 | OCR with Claude Haiku, auto-fill forms, price analysis |
 | v5 | Apr 12 | Product catalog, price alerts with actions, dashboard stats |
 | v5.1 | Apr 27 | Nav redesign (5 icons + More), OCR prompt fix (pending) |
+
+
+test
