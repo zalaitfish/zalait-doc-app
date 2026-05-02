@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { FileText, Search, ExternalLink, Trash2, Download } from 'lucide-react'
-import { listDocuments, deleteDocument } from '../api/db'
+import { FileText, Search, ExternalLink, Trash2, Download, Clock } from 'lucide-react'
+import { listDocuments, deleteDocument, markWaitingCredit } from '../api/db'
 import { downloadFile } from '../lib/backup'
 import { EmptyState, ErrorBox, PageHeader } from './Suppliers'
 
 const TYPE_LABEL = { invoice: 'חשבונית', delivery: 'ת. משלוח', credit: 'זיכוי' }
 const TYPE_COLOR = { invoice: { bg: '#EBF2FF', color: '#0066FF' }, delivery: { bg: '#EDFAF4', color: '#00B67A' }, credit: { bg: '#FFF0F1', color: '#E84855' } }
+const STATUS_BADGE = { waiting_credit: { label: 'ממתין לזיכוי', bg: '#FFF8EB', color: '#F5A623' }, credit_received: { label: 'זיכוי התקבל', bg: '#EDFAF4', color: '#00B67A' } }
 
 export default function Documents() {
   const [docs, setDocs] = useState([])
@@ -25,6 +26,9 @@ export default function Documents() {
     if (!doc.file_url) return; setBusyId(doc.id)
     try { const s=(doc.supplier?.name||'doc').replace(/[^\w\u0590-\u05FF -]/g,''); const ext=(doc.file_url.split('.').pop()||'jpg').split('?')[0]; await downloadFile(doc.file_url,`${doc.doc_date}_${s}.${ext}`) } catch(e){setError(e.message)} finally{setBusyId(null)}
   }
+  const handleMarkCredit = async (doc) => {
+    setBusyId(doc.id); try { await markWaitingCredit(doc.id); load() } catch(e) { setError(e.message) } finally { setBusyId(null) }
+  }
   const filtered = docs.filter(d => { if(filter!=='all'&&d.type!==filter) return false; if(search&&!(`${d.doc_number||''} ${d.supplier?.name||''}`).toLowerCase().includes(search.toLowerCase())) return false; return true })
 
   return (
@@ -42,19 +46,27 @@ export default function Documents() {
         {!loading && filtered.length===0 && <EmptyState text="אין מסמכים" />}
         {filtered.map(d => {
           const tc = TYPE_COLOR[d.type]||{bg:'#F5F5F5',color:'#666'}
+          const sb = STATUS_BADGE[d.status]
           return (
             <div key={d.id} className="card p-4">
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{background:tc.bg}}><FileText className="w-5 h-5" style={{color:tc.color}} /></div>
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-sm text-gray-900 truncate">{d.supplier?.name||'ללא ספק'}</div>
-                  <div className="flex items-center gap-2 mt-0.5"><span className="text-[10px] font-bold px-2 py-0.5 rounded-md" style={{background:tc.bg,color:tc.color}}>{TYPE_LABEL[d.type]}</span><span className="text-xs text-gray-400">{d.doc_number&&`#${d.doc_number} • `}{d.doc_date}</span></div>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md" style={{background:tc.bg,color:tc.color}}>{TYPE_LABEL[d.type]}</span>
+                    {sb && <span className="text-[10px] font-bold px-2 py-0.5 rounded-md" style={{background:sb.bg,color:sb.color}}>{sb.label}</span>}
+                    <span className="text-xs text-gray-400">{d.doc_number&&`#${d.doc_number} • `}{d.doc_date}</span>
+                  </div>
                 </div>
                 {d.total && <div className="font-bold text-sm text-gray-900">₪{Number(d.total).toLocaleString()}</div>}
               </div>
-              <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-50">
+              <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-50 flex-wrap">
                 {d.file_url && <a href={d.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-gray-500 font-medium"><ExternalLink className="w-3.5 h-3.5" />צפה</a>}
                 {d.file_url && <button onClick={()=>handleDownload(d)} disabled={busyId===d.id} className="flex items-center gap-1 text-xs text-gray-500 font-medium disabled:opacity-40"><Download className="w-3.5 h-3.5" />הורד</button>}
+                {(d.type==='invoice'||d.type==='delivery') && d.status!=='waiting_credit' && d.status!=='credit_received' && (
+                  <button onClick={()=>handleMarkCredit(d)} disabled={busyId===d.id} className="flex items-center gap-1 text-xs text-amber-600 font-medium disabled:opacity-40"><Clock className="w-3.5 h-3.5" />ממתין לזיכוי</button>
+                )}
                 <button onClick={()=>handleDelete(d)} disabled={busyId===d.id} className="flex items-center gap-1 text-xs text-red-500 font-medium mr-auto disabled:opacity-40"><Trash2 className="w-3.5 h-3.5" />מחק</button>
               </div>
             </div>
